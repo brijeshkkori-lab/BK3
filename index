@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BK3 — Road Rush</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:     #0D0304;
+      --deep:      #130507;
+      --card:      #1C0608;
+      --border:    #3A1010;
+      --muted:     #8A6060;
+      --offwhite:  #FFF3CD;
+      --red:       #C0152A;
+      --red2:      #E8192F;
+      --red-glow:  rgba(192,21,42,0.45);8
+      --gold:      #D4A017;
+      --gold2:     #FFD700;
+      --gold-glow: rgba(212,160,23,0.4);
+      --gold-dim:  rgba(255,215,0,0.12);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--black);
+      color: var(--offwhite);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.9rem 2.5rem;
+      background: rgba(13,3,4,0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.9rem; font-weight: 900; letter-spacing: 0.1em;
+      background: linear-gradient(90deg, var(--red2), var(--gold2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      text-shadow: none;
+    }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none;
+      font-size: 0.85rem; font-weight: 500; letter-spacing: 0.08em;
+      text-transform: uppercase; transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--gold2); }
+    .nav-cta {
+      background: linear-gradient(135deg, var(--red), var(--gold));
+      color: #0D0304; font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; padding: 0.55rem 1.5rem;
+      border: none; border-radius: 4px; cursor: pointer;
+      text-decoration: none; transition: opacity .2s, transform .15s;
+      box-shadow: 0 2px 16px var(--red-glow);
+    }
+    .nav-cta:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    /* ─── HERO ─── */
+    #hero {
+      position: relative; min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 9rem 1.5rem 5rem;
+      overflow: hidden;
+    }
+    #road-canvas {
+      position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    }
+    /* asphalt texture overlay */
+    #hero::before {
+      content: '';
+      position: absolute; inset: 0; z-index: 1;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 3px,
+          rgba(0,0,0,0.06) 3px,
+          rgba(0,0,0,0.06) 4px
+        );
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      position: relative; z-index: 2;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.85rem; font-weight: 700; letter-spacing: 0.3em;
+      color: var(--gold); text-transform: uppercase;
+      margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 0.75rem; justify-content: center;
+    }
+    .hero-eyebrow::before,
+    .hero-eyebrow::after {
+      content: ''; display: inline-block; height: 1px; width: 48px;
+      background: linear-gradient(90deg, transparent, var(--gold));
+    }
+    .hero-eyebrow::after { background: linear-gradient(90deg, var(--gold), transparent); }
+
+    .hero-title {
+      position: relative; z-index: 2;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: clamp(4rem, 13vw, 10rem);
+      font-weight: 900; line-height: 0.88;
+      letter-spacing: -0.01em; text-transform: uppercase;
+      margin-bottom: 0.2em;
+    }
+    .title-bk3 {
+      display: block;
+      background: linear-gradient(160deg, var(--gold2) 0%, var(--gold) 50%, #B8860B 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 24px var(--gold-glow));
+    }
+    .title-road {
+      display: block;
+      background: linear-gradient(160deg, #fff 0%, var(--offwhite) 60%, var(--gold2) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      font-size: clamp(2.5rem, 8vw, 6.5rem);
+      letter-spacing: 0.08em;
+    }
+    .title-rush {
+      display: block;
+      background: linear-gradient(160deg, var(--red2) 0%, var(--red) 60%, #7A0010 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 28px var(--red-glow));
+      font-size: clamp(4rem, 13vw, 10rem);
+    }
+    .hero-sub {
+      position: relative; z-index: 2;
+      font-size: 1.05rem; color: var(--muted); max-width: 480px;
+      line-height: 1.7; margin: 1.5rem auto 2.75rem;
+    }
+    .hero-actions {
+      position: relative; z-index: 2;
+      display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
+    }
+    .btn-download {
+      display: inline-flex; align-items: center; gap: 0.65rem;
+      background: linear-gradient(135deg, var(--red), var(--red2) 40%, var(--gold) 100%);
+      color: #0D0304; font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.2rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 1rem 2.4rem; border-radius: 4px;
+      text-decoration: none; border: none; cursor: pointer;
+      box-shadow: 0 0 36px var(--red-glow), 0 0 16px var(--gold-glow);
+      transition: transform .15s, box-shadow .2s;
+    }
+    .btn-download:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 56px var(--red-glow), 0 0 28px var(--gold-glow);
+    }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 0.65rem;
+      background: transparent; color: var(--offwhite);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.2rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 1rem 2.4rem; border-radius: 4px;
+      text-decoration: none; border: 1px solid var(--border);
+      transition: border-color .2s, background .2s;
+    }
+    .btn-secondary:hover { border-color: var(--gold); background: var(--gold-dim); }
+
+    .hero-stats {
+      position: relative; z-index: 2;
+      margin-top: 3.5rem;
+      display: flex; gap: 3rem; flex-wrap: wrap; justify-content: center;
+    }
+    .stat { text-align: center; }
+    .stat-num {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 2.2rem; font-weight: 900;
+      background: linear-gradient(90deg, var(--gold2), var(--gold));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      line-height: 1;
+    }
+    .stat-label { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; margin-top: 0.3rem; }
+
+    /* gold divider */
+    .gold-divider {
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), var(--red), var(--gold), transparent);
+      border: none; margin: 0;
+    }
+
+    /* ─── FEATURES ─── */
+    #features {
+      padding: 6rem 2rem; max-width: 1100px; margin: 0 auto;
+    }
+    .section-eyebrow {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 0.78rem;
+      letter-spacing: 0.28em; color: var(--gold); text-transform: uppercase;
+      margin-bottom: 0.6rem;
+    }
+    .section-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: clamp(2.2rem, 4.5vw, 3.2rem); font-weight: 900;
+      text-transform: uppercase; line-height: 1.05;
+      margin-bottom: 3rem;
+    }
+    .section-title em {
+      font-style: normal;
+      background: linear-gradient(90deg, var(--red2), var(--gold2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.2rem;
+    }
+    .feature-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 6px; padding: 1.75rem;
+      transition: border-color .25s, transform .2s;
+      position: relative; overflow: hidden;
+    }
+    .feature-card::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--red), var(--gold));
+      transform: scaleX(0); transform-origin: left;
+      transition: transform .3s ease;
+    }
+    .feature-card:hover { border-color: var(--gold); transform: translateY(-3px); }
+    .feature-card:hover::after { transform: scaleX(1); }
+    .feature-icon {
+      font-size: 2rem; margin-bottom: 1rem; display: block;
+    }
+    .feature-card h3 {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 1.2rem;
+      font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--gold2); margin-bottom: 0.5rem;
+    }
+    .feature-card p { font-size: 0.88rem; color: var(--muted); line-height: 1.65; }
+
+    /* ─── SCREENSHOTS ─── */
+    #screenshots {
+      padding: 5.5rem 2rem;
+      background: var(--deep);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .screenshots-inner { max-width: 1100px; margin: 0 auto; }
+    .screens-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem; margin-top: 2.5rem;
+    }
+    .screen-card {
+      border-radius: 10px; overflow: hidden; border: 1px solid var(--border);
+      aspect-ratio: 9/16;
+      display: flex; align-items: flex-end; justify-content: flex-start;
+      padding: 1rem; position: relative;
+      transition: border-color .2s, transform .2s;
+    }
+    .screen-card:hover { border-color: var(--gold); transform: translateY(-4px); }
+    .screen-card::before { content: ''; position: absolute; inset: 0; background: var(--bg, #1C0608); }
+    .screen-label {
+      position: relative; z-index: 1;
+      font-family: 'Barlow Condensed', sans-serif; font-size: 0.78rem;
+      font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--gold); background: rgba(13,3,4,0.7);
+      padding: 0.25rem 0.65rem; border-radius: 3px;
+      border: 1px solid rgba(212,160,23,0.3);
+    }
+    .sc1::before {
+      background:
+        radial-gradient(ellipse at 50% 30%, rgba(192,21,42,.7) 0%, transparent 55%),
+        repeating-linear-gradient(90deg, rgba(255,215,0,.04) 0, rgba(255,215,0,.04) 1px, transparent 1px, transparent 40px),
+        linear-gradient(180deg, #1a0408 0%, #0d0304 100%);
+    }
+    .sc2::before {
+      background:
+        radial-gradient(ellipse at 30% 60%, rgba(212,160,23,.5) 0%, transparent 55%),
+        linear-gradient(135deg, #1a0a00 0%, #0d0304 100%);
+    }
+    .sc3::before {
+      background:
+        radial-gradient(ellipse at 70% 40%, rgba(192,21,42,.6) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 80%, rgba(212,160,23,.3) 0%, transparent 50%),
+        linear-gradient(180deg, #130204 0%, #0d0304 100%);
+    }
+    .sc4::before {
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(255,215,0,.2) 0%, transparent 60%),
+        linear-gradient(180deg, #150800 0%, #0d0304 100%);
+    }
+
+    /* ─── DOWNLOAD ─── */
+    #download {
+      padding: 7rem 2rem; text-align: center; position: relative; overflow: hidden;
+    }
+    #download::before {
+      content: ''; position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(192,21,42,.1) 0%, rgba(212,160,23,.06) 40%, transparent 70%);
+      pointer-events: none;
+    }
+    .download-inner { max-width: 640px; margin: 0 auto; position: relative; }
+    .download-inner > p { color: var(--muted); font-size: 1rem; line-height: 1.7; margin-bottom: 2.5rem; }
+    .download-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px; padding: 2.5rem;
+      display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+    }
+    /* top gold+red bar */
+    .download-card::before {
+      content: ''; display: block; width: 100%; height: 3px; border-radius: 2px;
+      background: linear-gradient(90deg, var(--red), var(--gold2), var(--red));
+      margin-bottom: 0.5rem;
+    }
+    .apk-row {
+      display: flex; align-items: center; gap: 1.25rem;
+      background: rgba(212,160,23,.06); border: 1px solid rgba(212,160,23,.2);
+      border-radius: 6px; padding: 1rem 1.4rem; width: 100%;
+    }
+    .apk-icon {
+      width: 54px; height: 54px; border-radius: 10px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--red), var(--gold));
+      display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
+    }
+    .apk-meta { text-align: left; }
+    .apk-name {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 1.15rem;
+      font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold2);
+    }
+    .apk-version { font-size: 0.8rem; color: var(--muted); margin-top: 0.15rem; }
+    .apk-size { font-size: 0.8rem; color: var(--red2); margin-top: 0.2rem; font-weight: 600; }
+
+    .btn-big-download {
+      width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.8rem;
+      background: linear-gradient(135deg, var(--red) 0%, var(--red2) 40%, var(--gold) 100%);
+      color: #0D0304; font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.35rem; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase;
+      padding: 1.1rem 2rem; border-radius: 5px;
+      text-decoration: none; border: none; cursor: pointer;
+      box-shadow: 0 0 44px var(--red-glow), 0 0 18px var(--gold-glow);
+      transition: box-shadow .2s, transform .15s;
+    }
+    .btn-big-download:hover {
+      box-shadow: 0 0 64px var(--red-glow), 0 0 32px var(--gold-glow);
+      transform: translateY(-2px);
+    }
+    .req-pills {
+      display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; width: 100%;
+    }
+    .req-pill {
+      font-size: 0.77rem; color: var(--muted); letter-spacing: 0.07em;
+      background: rgba(255,255,255,.03); border: 1px solid var(--border);
+      border-radius: 20px; padding: 0.35rem 0.9rem;
+    }
+    .disclaimer {
+      font-size: 0.78rem; color: var(--muted); line-height: 1.65;
+    }
+    .disclaimer a { color: var(--gold); text-decoration: none; }
+    .disclaimer a:hover { text-decoration: underline; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      border-top: 1px solid var(--border); padding: 2.5rem 2rem;
+      max-width: 1100px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+    }
+    .footer-logo {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 1.5rem; font-weight: 900;
+      background: linear-gradient(90deg, var(--red2), var(--gold2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .footer-links { display: flex; gap: 1.75rem; flex-wrap: wrap; }
+    .footer-links a { font-size: 0.82rem; color: var(--muted); text-decoration: none; transition: color .2s; }
+    .footer-links a:hover { color: var(--gold2); }
+    .github-btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-size: 0.82rem; color: var(--muted); text-decoration: none;
+      border: 1px solid var(--border); border-radius: 4px; padding: 0.45rem 1rem;
+      transition: border-color .2s, color .2s;
+    }
+    .github-btn:hover { border-color: var(--gold); color: var(--gold2); }
+    .footer-copy { font-size: 0.76rem; color: var(--muted); width: 100%; text-align: center; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 640px) {
+      nav { padding: 0.9rem 1.25rem; }
+      .nav-links { display: none; }
+      footer { flex-direction: column; align-items: center; }
+      .footer-links { justify-content: center; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #road-canvas { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAV ── -->
+  <nav>
+    <span class="nav-logo">BK3</span>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#screenshots">Screenshots</a></li>
+      <li><a href="#download">Download</a></li>
+    </ul>
+    <a href="#download" class="nav-cta">GET APK</a>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section id="hero">
+    <canvas id="road-canvas"></canvas>
+    <p class="hero-eyebrow">🏁 Free Android Game</p>
+    <h1 class="hero-title">
+      <span class="title-bk3">BK3</span>
+      <span class="title-road">Road</span>
+      <span class="title-rush">Rush</span>
+    </h1>
+    <p class="hero-sub">
+      Hit the road at full throttle. Dodge traffic, collect gold, and outlast every rival in the most adrenaline-fuelled mobile racer of 2026.
+    </p>
+    <div class="hero-actions">
+      <a href="#download" class="btn-download">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v14M6 10l6 6 6-6"/><path d="M2 20h20"/></svg>
+        Download Free
+      </a>
+      <a href="#screenshots" class="btn-secondary">
+        Watch Gameplay
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">1M+</div><div class="stat-label">Downloads</div></div>
+      <div class="stat"><div class="stat-num">4.9★</div><div class="stat-label">Avg. Rating</div></div>
+      <div class="stat"><div class="stat-num">60fps</div><div class="stat-label">Smooth Play</div></div>
+      <div class="stat"><div class="stat-num">52MB</div><div class="stat-label">Compact APK</div></div>
+    </div>
+  </section>
+
+  <hr class="gold-divider" />
+
+  <!-- ── FEATURES ── -->
+  <section id="features">
+    <p class="section-eyebrow">Why Play BK3</p>
+    <h2 class="section-title">Built for <em>speed.</em><br/>Designed for <em>glory.</em></h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">🚗</span>
+        <h3>High-Speed Traffic</h3>
+        <p>Weave through hundreds of vehicles at breakneck speed. Every second counts on the infinite road.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🏆</span>
+        <h3>Tournament Mode</h3>
+        <p>Weekly ranked tournaments with gold trophy rewards for top-tier racers worldwide.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🚀</span>
+        <h3>Nitro Boost System</h3>
+        <p>Collect fuel canisters to charge your nitro. Unleash it at the right moment to leave rivals behind.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🎯</span>
+        <h3>Precision Controls</h3>
+        <p>Tilt or tap — your choice. Responsive one-thumb steering built from the ground up for mobile.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🌆</span>
+        <h3>6 Road Environments</h3>
+        <p>City highway, desert canyon, mountain pass, night freeway, rain-soaked streets, and more.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔥</span>
+        <h3>Zero Pay-to-Win</h3>
+        <p>No ads, no locked cars, no subscriptions. Just raw racing. Open-source and free forever on GitHub.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="gold-divider" />
+
+  <!-- ── SCREENSHOTS ── -->
+  <section id="screenshots">
+    <div class="screenshots-inner">
+      <p class="section-eyebrow">In-Game</p>
+      <h2 class="section-title">See the <em>Rush.</em></h2>
+      <div class="screens-grid">
+        <div class="screen-card sc1"><span class="screen-label">Gameplay</span></div>
+        <div class="screen-card sc2"><span class="screen-label">Night Run</span></div>
+        <div class="screen-card sc3"><span class="screen-label">Boss Chase</span></div>
+        <div class="screen-card sc4"><span class="screen-label">Garage</span></div>
+      </div>
+      <p style="margin-top:1.4rem;font-size:0.8rem;color:var(--muted);text-align:center;">
+        Replace placeholders with real screenshots in <code style="color:var(--gold);">assets/screenshots/</code>
+      </p>
+    </div>
+  </section>
+
+  <!-- ── DOWNLOAD ── -->
+  <section id="download">
+    <div class="download-inner">
+      <p class="section-eyebrow">Get the Game</p>
+      <h2 class="section-title" style="margin-bottom:1rem;">Download &amp; <em>race now.</em></h2>
+      <p>The APK is hosted directly in the BK3 GitHub repository — always the latest stable build, no third-party stores, no trackers.</p>
+      <div class="download-card">
+
+        <div class="apk-row">
+          <div class="apk-icon">🏎️</div>
+          <div class="apk-meta">
+            <div class="apk-name">BK3 Road Rush.apk</div>
+            <div class="apk-version">Version 1.0.0 — June 2026</div>
+            <div class="apk-size">52 MB · Android 8.0+</div>
+          </div>
+        </div>
+
+        <!-- ✏️ Replace href with your actual GitHub raw APK URL -->
+        <a
+          href="https://github.com/YOUR_USERNAME/bk3-road-rush/raw/main/apk/BK3-RoadRush.apk"
+          class="btn-big-download"
+          download
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v14M6 10l6 6 6-6"/><path d="M2 20h20"/></svg>
+          Download Free APK
+        </a>
+
+        <div class="req-pills">
+          <span class="req-pill">Android 8.0+</span>
+          <span class="req-pill">ARM64 / ARMv7</span>
+          <span class="req-pill">52 MB storage</span>
+          <span class="req-pill">No root needed</span>
+        </div>
+
+        <p class="disclaimer">
+          Enable <strong style="color:var(--offwhite)">Install from unknown sources</strong> in Android settings first.<br/>
+          APK and source code hosted on
+          <a href="https://github.com/YOUR_USERNAME/bk3-road-rush" target="_blank" rel="noopener">GitHub</a>.
+          Free and open-source under MIT License.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    <span class="footer-logo">BK3 ROAD RUSH</span>
+    <nav class="footer-links">
+      <a href="#features">Features</a>
+      <a href="#screenshots">Screenshots</a>
+      <a href="#download">Download</a>
+      <a href="https://github.com/YOUR_USERNAME/bk3-road-rush" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/YOUR_USERNAME/bk3-road-rush/issues" target="_blank" rel="noopener">Report Bug</a>
+    </nav>
+    <a href="https://github.com/YOUR_USERNAME/bk3-road-rush" target="_blank" rel="noopener" class="github-btn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.729.083-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23A11.52 11.52 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.29-1.552 3.297-1.23 3.297-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.605-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      View on GitHub
+    </a>
+    <p class="footer-copy">© 2026 BK3 Road Rush. MIT License. Free to play, forever.</p>
+  </footer>
+
+  <!-- ── SPEED LINES CANVAS ── -->
+  <script>
+    const canvas = document.getElementById('road-canvas');
+    const ctx = canvas.getContext('2d');
+    let lines = [];
+    let W, H;
+
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = canvas.parentElement.offsetHeight;
+    }
+
+    // Road rush speed lines shooting from center
+    class SpeedLine {
+      constructor() { this.reset(true); }
+      reset(initial = false) {
+        this.angle = Math.random() * Math.PI * 2;
+        this.dist = initial ? Math.random() * Math.max(W, H) * 0.7 : 0;
+        this.speed = Math.random() * 6 + 3;
+        this.length = Math.random() * 80 + 30;
+        this.alpha = Math.random() * 0.25 + 0.05;
+        this.color = Math.random() > 0.5 ? '#D4A017' : '#C0152A';
+        this.width = Math.random() * 1.2 + 0.3;
+      }
+      update() {
+        this.dist += this.speed;
+        if (this.dist > Math.max(W, H) * 0.85) this.reset();
+      }
+      draw() {
+        const cx = W / 2, cy = H * 0.42;
+        const x1 = cx + Math.cos(this.angle) * this.dist;
+        const y1 = cy + Math.sin(this.angle) * this.dist;
+        const x2 = cx + Math.cos(this.angle) * (this.dist + this.length);
+        const y2 = cy + Math.sin(this.angle) * (this.dist + this.length);
+        ctx.save();
+        ctx.globalAlpha = this.alpha * (this.dist / (Math.max(W, H) * 0.5));
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = this.width;
+        ctx.shadowBlur = 4; ctx.shadowColor = this.color;
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function init() { lines = Array.from({ length: 90 }, () => new SpeedLine()); }
+
+    function animate() {
+      ctx.clearRect(0, 0, W, H);
+      lines.forEach(l => { l.update(); l.draw(); });
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', () => { resize(); init(); });
+    resize(); init(); animate();
+  </script>
+</body>
+</html>
